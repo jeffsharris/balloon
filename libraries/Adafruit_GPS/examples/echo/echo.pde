@@ -1,12 +1,23 @@
-#include <Adafruit_BMP085_U.h>
+// Test code for Adafruit GPS modules using MTK3329/MTK3339 driver
+//
+// This code just echos whatever is coming from the GPS unit to the
+// serial monitor, handy for debugging!
+//
+// Tested and works great with the Adafruit Ultimate GPS module
+// using MTK33x9 chipset
+//    ------> http://www.adafruit.com/products/746
+// Pick one up today at the Adafruit electronics shop 
+// and help support open source hardware & software! -ada
+
 #include <Adafruit_GPS.h>
-#include <Adafruit_Sensor.h>
-#include "RTClib.h"
-#include <SD.h>
-#include <SPI.h>
-#include <Wire.h>
-   
-Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
+#if ARDUINO >= 100
+ #include <SoftwareSerial.h>
+#else
+  // Older Arduino IDE requires NewSoftSerial, download from:
+  // http://arduiniana.org/libraries/newsoftserial/
+// #include <NewSoftSerial.h>
+ // DO NOT install NewSoftSerial if using Arduino 1.0 or later!
+#endif
 
 // Connect the GPS Power pin to 5V
 // Connect the GPS Ground pin to ground
@@ -17,8 +28,13 @@ Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 //   Connect the GPS TX (transmit) pin to Arduino RX1, RX2 or RX3
 //   Connect the GPS RX (receive) pin to matching TX1, TX2 or TX3
 
-SoftwareSerial mySerial(3, 2);
-
+// If using software serial, keep these lines enabled
+// (you can change the pin numbers to match your wiring):
+#if ARDUINO >= 100
+  SoftwareSerial mySerial(3, 2);
+#else
+  NewSoftSerial mySerial(3, 2);
+#endif
 Adafruit_GPS GPS(&mySerial);
 // If using hardware serial (e.g. Arduino Mega), comment
 // out the above six lines and enable this line instead:
@@ -29,43 +45,19 @@ Adafruit_GPS GPS(&mySerial);
 // Set to 'true' if you want to debug and listen to the raw GPS sentences
 #define GPSECHO  true
 
-// Reset the real time clock's time to be the current time of the computer
-#define SET_CLOCK        0
-
 // this keeps track of whether we're using the interrupt
 // off by default!
 boolean usingInterrupt = false;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 
-RTC_DS1307 RTC;
-
-void setup(void) 
-{
+void setup()  
+{    
+  // connect at 115200 so we can read the GPS fast enuf and
+  // also spit it out
   Serial.begin(115200);
-  Serial.println("Pressure Sensor Test"); Serial.println("");
+  Serial.println("Adafruit GPS library basic test!");
 
-  Wire.begin();
-  RTC.begin();
- 
-  if (! RTC.isrunning()) {
-    Serial.println("RTC is NOT running!");
-    // following line sets the RTC to the date & time this sketch was compiled
-    // uncomment it & upload to set the time, date and start run the RTC!
-    #if SET_CLOCK
-      RTC.adjust(DateTime(__DATE__, __TIME__));
-    #endif
-  }
-
-  
-  /* Initialise the pressure sensor */
-  if(!bmp.begin())
-  {
-    /* There was a problem detecting the BMP085 ... check your connections */
-    Serial.print("Ooops, no BMP085 detected ... Check your wiring or I2C ADDR!");
-    while(1);
-  }
-
-    // 9600 NMEA is the default baud rate for MTK - some use 4800
+  // 9600 NMEA is the default baud rate for MTK - some use 4800
   GPS.begin(9600);
   
   // You can adjust which sentences to have the module emit, below
@@ -98,6 +90,7 @@ void setup(void)
   // every 1 millisecond, and read data from the GPS for you. that makes the
   // loop code a heck of a lot easier!
   useInterrupt(true);
+  
   delay(1000);
 }
 
@@ -124,56 +117,9 @@ void useInterrupt(boolean v) {
     usingInterrupt = false;
   }
 }
- 
-void loop(void) 
+
+
+void loop()                     // run over and over again
 {
-  /* Get a new pressure sensor event */ 
-  sensors_event_t event;
-  bmp.getEvent(&event);
- 
-  /* Display the results (barometric pressure is measure in hPa) */
-  if (event.pressure)
-  {
-    /* Display atmospheric pressue in hPa */
-    Serial.print("Pressure:    ");
-    Serial.print(event.pressure);
-    Serial.println(" hPa");
-    
-    /* Calculating altitude with reasonable accuracy requires pressure    *
-     * sea level pressure for your position at the moment the data is     *
-     * converted, as well as the ambient temperature in degress           *
-     * celcius.  If you don't have these values, a 'generic' value of     *
-     * 1013.25 hPa can be used (defined as SENSORS_PRESSURE_SEALEVELHPA   *
-     * in sensors.h), but this isn't ideal and will give variable         *
-     * results from one day to the next.                                  *
-     *                                                                    *
-     * You can usually find the current SLP value by looking at weather   *
-     * websites or from environmental information centers near any major  *
-     * airport.                                                           *
-     *                                                                    *
-     * For example, for Paris, France you can check the current mean      *
-     * pressure and sea level at: http://bit.ly/16Au8ol                   */
-     
-    /* First we get the current temperature from the BMP085 */
-    float temperature;
-    bmp.getTemperature(&temperature);
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
-    Serial.println(" C");
- 
-    /* Then convert the atmospheric pressure, SLP and temp to altitude    */
-    /* Update this next line with the current SLP for better results      */
-    float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
-    Serial.print("Altitude:    "); 
-    Serial.print(bmp.pressureToAltitude(seaLevelPressure,
-                                        event.pressure,
-                                        temperature)); 
-    Serial.println(" m");
-    Serial.println("");
-  }
-  else
-  {
-    Serial.println("Sensor error");
-  }
-  delay(1000);
+   // do nothing! all reading and printing is done in the interrupt
 }
