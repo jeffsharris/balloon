@@ -3,9 +3,11 @@
 #include <Adafruit_Sensor.h>
 #include "RTClib.h"
 #include <SD.h>
+#include <SoftwareSerial.h>
 #include <SPI.h>
 #include <Wire.h>
-   
+
+/*** Variables/constants pressure sensor ***/
 Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 
 // Connect the GPS Power pin to 5V
@@ -19,52 +21,107 @@ Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 
 SoftwareSerial mySerial(3, 2);
 
+
+/*** Variables/constants GPS module ***/
 Adafruit_GPS GPS(&mySerial);
 // If using hardware serial (e.g. Arduino Mega), comment
 // out the above six lines and enable this line instead:
 //Adafruit_GPS GPS(&Serial1);
 
-
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences
 #define GPSECHO  true
-
-// Reset the real time clock's time to be the current time of the computer
-#define SET_CLOCK        0
 
 // this keeps track of whether we're using the interrupt
 // off by default!
 boolean usingInterrupt = false;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 
+
+/*** Variables/constants for the data logger ***/
 RTC_DS1307 RTC;
+
+// for the data logging shield, we use digital pin 10 for the SD cs line
+const int chipSelect = 10;
+
+// the logging file
+File logfile;
+
+// Reset the real time clock's time to be the current time of the computer
+#define SET_CLOCK        0
+
+// Echo data to serial port
+#define ECHO_TO_SERIAL   1
 
 void setup(void) 
 {
   Serial.begin(115200);
-  Serial.println("Pressure Sensor Test"); Serial.println("");
+  //Serial.println("Pressure Sensor Test"); Serial.println("");
 
-  Wire.begin();
-  RTC.begin();
- 
+  /*** Initialization for the data logger ***/
+  // initialize the SD card
+  Serial.print(F("Initializing SD card..."));
+  // make sure that the default chip select pin is set to
+  // output, even if you don't use it:
+  pinMode(10, OUTPUT);
+  
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println(F("Card failed, or not present"));
+  }
+  Serial.println(F("card initialized."));
+
+  // create a new file
+  char filename[] = "LOGGER00.CSV";
+  for (uint8_t i = 0; i < 100; i++) {
+    filename[6] = i/10 + '0';
+    filename[7] = i%10 + '0';
+    if (! SD.exists(filename)) {
+        Serial.print(F("Creating file: "));
+        Serial.println(filename);
+      // only open a new file if it doesn't exist
+      logfile = SD.open(filename, FILE_WRITE); 
+      Serial.println(logfile);
+      break;  // leave the loop!
+    } else {
+        Serial.print(F("Found file: "));
+        Serial.println(filename);
+    }
+  }
+  
+  if (! logfile) {
+    Serial.println(F("couldnt create file"));
+  }
+  
+  Serial.print(F("Logging to: "));
+  Serial.println(filename);
+    
+  // connect to RTC
+  Wire.begin();  
+  if (!RTC.begin()) {
+    logfile.println(F("RTC failed"));
+  #if ECHO_TO_SERIAL
+    Serial.println(F("RTC failed"));
+  #endif
+  }
+
   if (! RTC.isrunning()) {
-    Serial.println("RTC is NOT running!");
-    // following line sets the RTC to the date & time this sketch was compiled
-    // uncomment it & upload to set the time, date and start run the RTC!
+    Serial.println(F("RTC is NOT running!"));
     #if SET_CLOCK
       RTC.adjust(DateTime(__DATE__, __TIME__));
     #endif
-  }
+  } 
 
   
-  /* Initialise the pressure sensor */
+  /*** Initialization for the pressure sensor ***/
   if(!bmp.begin())
   {
     /* There was a problem detecting the BMP085 ... check your connections */
-    Serial.print("Ooops, no BMP085 detected ... Check your wiring or I2C ADDR!");
+    Serial.print(F("Ooops, no BMP085 detected ... Check your wiring or I2C ADDR!"));
     while(1);
   }
 
+  /*** Initialization for the GPS module ***/
     // 9600 NMEA is the default baud rate for MTK - some use 4800
   GPS.begin(9600);
   
@@ -135,9 +192,9 @@ void loop(void)
   if (event.pressure)
   {
     /* Display atmospheric pressue in hPa */
-    Serial.print("Pressure:    ");
+    Serial.print(F("Pressure:    "));
     Serial.print(event.pressure);
-    Serial.println(" hPa");
+    Serial.println(F(" hPa"));
     
     /* Calculating altitude with reasonable accuracy requires pressure    *
      * sea level pressure for your position at the moment the data is     *
@@ -157,23 +214,31 @@ void loop(void)
     /* First we get the current temperature from the BMP085 */
     float temperature;
     bmp.getTemperature(&temperature);
-    Serial.print("Temperature: ");
+    Serial.print(F("Temperature: "));
     Serial.print(temperature);
-    Serial.println(" C");
+    Serial.println(F(" C"));
  
     /* Then convert the atmospheric pressure, SLP and temp to altitude    */
     /* Update this next line with the current SLP for better results      */
     float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
-    Serial.print("Altitude:    "); 
+    Serial.print(F("Altitude:    ")); 
     Serial.print(bmp.pressureToAltitude(seaLevelPressure,
                                         event.pressure,
                                         temperature)); 
-    Serial.println(" m");
+    Serial.println(F(" m"));
     Serial.println("");
   }
   else
   {
-    Serial.println("Sensor error");
+    Serial.println(F("Sensor error"));
   }
   delay(1000);
 }
+
+void logToCardAndMaybeSerial(char *str) {
+  logfile.print(str);
+#if ECHO_TO_SERIAL
+    Serial.print(str);
+#endif
+}
+
