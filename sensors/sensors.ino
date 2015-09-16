@@ -1,7 +1,10 @@
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
 #include <Adafruit_BMP085_U.h>
 #include <Adafruit_GPS.h>
+#include <Adafruit_Sensor.h>
+#include "RTClib.h"
+#include <SD.h>
+#include <SPI.h>
+#include <Wire.h>
    
 Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 
@@ -57,10 +60,23 @@ Adafruit_GPS GPS(&mySerial);
 boolean usingInterrupt = false;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 
+RTC_DS1307 RTC;
+
 void setup(void) 
 {
   Serial.begin(115200);
   Serial.println("Pressure Sensor Test"); Serial.println("");
+
+  Wire.begin();
+  RTC.begin();
+ 
+  if (! RTC.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    // uncomment it & upload to set the time, date and start run the RTC!
+    RTC.adjust(DateTime(__DATE__, __TIME__));
+  }
+
   
   /* Initialise the sensor */
   if(!bmp.begin())
