@@ -8,27 +8,6 @@
    
 Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 
-
-// Test code for Adafruit GPS modules using MTK3329/MTK3339 driver
-//
-// This code just echos whatever is coming from the GPS unit to the
-// serial monitor, handy for debugging!
-//
-// Tested and works great with the Adafruit Ultimate GPS module
-// using MTK33x9 chipset
-//    ------> http://www.adafruit.com/products/746
-// Pick one up today at the Adafruit electronics shop 
-// and help support open source hardware & software! -ada
-
-#if ARDUINO >= 100
- #include <SoftwareSerial.h>
-#else
-  // Older Arduino IDE requires NewSoftSerial, download from:
-  // http://arduiniana.org/libraries/newsoftserial/
-// #include <NewSoftSerial.h>
- // DO NOT install NewSoftSerial if using Arduino 1.0 or later!
-#endif
-
 // Connect the GPS Power pin to 5V
 // Connect the GPS Ground pin to ground
 // If using software serial (sketch example default):
@@ -38,13 +17,8 @@ Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 //   Connect the GPS TX (transmit) pin to Arduino RX1, RX2 or RX3
 //   Connect the GPS RX (receive) pin to matching TX1, TX2 or TX3
 
-// If using software serial, keep these lines enabled
-// (you can change the pin numbers to match your wiring):
-#if ARDUINO >= 100
-  SoftwareSerial mySerial(3, 2);
-#else
-  NewSoftSerial mySerial(3, 2);
-#endif
+SoftwareSerial mySerial(3, 2);
+
 Adafruit_GPS GPS(&mySerial);
 // If using hardware serial (e.g. Arduino Mega), comment
 // out the above six lines and enable this line instead:
@@ -78,7 +52,7 @@ void setup(void)
   }
 
   
-  /* Initialise the sensor */
+  /* Initialise the pressure sensor */
   if(!bmp.begin())
   {
     /* There was a problem detecting the BMP085 ... check your connections */
@@ -148,7 +122,7 @@ void useInterrupt(boolean v) {
  
 void loop(void) 
 {
-  /* Get a new sensor event */ 
+  /* Get a new pressure sensor event */ 
   sensors_event_t event;
   bmp.getEvent(&event);
  
