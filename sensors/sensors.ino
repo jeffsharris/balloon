@@ -269,7 +269,7 @@ void logGPSLocation() {
   logfile.print(GPS.longitudeDegrees, 4);
 }
 
-void logGPSFixAndQuality() {
+void logGPSFix() {
  logfile.print(",");
  logfile.print((int)GPS.fix);
 }
