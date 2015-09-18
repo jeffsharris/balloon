@@ -55,6 +55,14 @@ File logfile;
 // Echo data to serial port
 #define ECHO_TO_SERIAL   1
 
+
+void logToSDAndMaybeSerial(char *str) {
+  logfile.print(str);
+  #if ECHO_TO_SERIAL
+    Serial.println(str);
+  #endif
+}
+
 void setup(void) 
 {
   Serial.begin(9600);
@@ -90,10 +98,7 @@ void setup(void)
   // connect to RTC
   Wire.begin();  
   if (!RTC.begin()) {
-    logfile.println(F("RTC failed"));
-  #if ECHO_TO_SERIAL
-    Serial.println(F("RTC failed"));
-  #endif
+    logToSDAndMaybeSerial("RTC failed");
   }
 
   if (! RTC.isrunning()) {
@@ -148,7 +153,7 @@ void setup(void)
   useInterrupt(true);
 
     
-  logfile.println("TimeOn (ms),UnixTime (ms),DateTime (PST),Pressure (hPa),Temp (°C),Altitude (m),GPSTime (GMT),GPSFix,Latitude,Longitude,Latitude (°),Longitude (°),Speed (m/s),GPSAngle (°),GPSAltitude (m),GPSSatellites");//,latitude,longitude,speed,angle,altitude,satellites");
+  logToSDAndMaybeSerial("TimeOn (ms),UnixTime (ms),DateTime (PST),GPSTime (UTC),GPSFixQuality,Latitude,Longitude,Latitude (°),Longitude (°),Speed (knots),GPSAngle (°),GPSAltitude (cm),GPSSatellites,Pressure (hPa),Temp (°C),Altitude (m)\r\n");
 }
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
@@ -211,18 +216,18 @@ void loop(void)
   if (millis() - timer > 2000) { 
     // log milliseconds since starting
     uint32_t m = millis();
-    logfile.print(m);           // milliseconds since start   
+    logToSDAndMaybeSerial(m);           // milliseconds since start   
     logUnixTime();
-    logPressure();
     logGPS();
-    logfile.println("");
+    logPressure();
+    logToSDAndMaybeSerial("\r\n");
     logfile.flush();
   }
 }
 
 void logGPS() {
     logGPSTime();
-    logGPSFix();
+    logGPSFixQuality();
     if (GPS.fix) {
       logGPSLocation();
       logGPSSpeed();
@@ -231,64 +236,64 @@ void logGPS() {
       logGPSSatellites();
       
     } else {
-      logfile.print(",,,,,,,,");
+      logToSDAndMaybeSerial(",,,,,,,,");
     }
 }
 
 void logGPSSatellites() {
-  logfile.print(",");
-  logfile.print((int)GPS.satellites);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial((int)GPS.satellites);
 }
 
 void logGPSAltitude() {
-  logfile.print(",");
-  logfile.print(GPS.altitude);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.altitude);
 }
 
 
 void logGPSAngle() {
-  logfile.print(",");
-  logfile.print(GPS.angle);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.angle);
 }
 
 void logGPSSpeed() {
-  logfile.print(",");
-  logfile.print(GPS.speed);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.speed);
 }
 
 void logGPSLocation() {
-  logfile.print(",");
-  logfile.print(GPS.latitude, 4);
-  logfile.print(GPS.lat);
-  logfile.print(",");
-  logfile.print(GPS.longitude, 4);
-  logfile.print(GPS.lon);
-  logfile.print(",");
-  logfile.print(GPS.latitudeDegrees, 4);
-  logfile.print(",");
-  logfile.print(GPS.longitudeDegrees, 4);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.latitude, 4);
+  logToSDAndMaybeSerial(GPS.lat);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.longitude, 4);
+  logToSDAndMaybeSerial(GPS.lon);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.latitudeDegrees, 4);
+  logToSDAndMaybeSerial(",");
+  logToSDAndMaybeSerial(GPS.longitudeDegrees, 4);
 }
 
-void logGPSFix() {
- logfile.print(",");
- logfile.print((int)GPS.fix);
+void logGPSFixQuality() {
+ logToSDAndMaybeSerial(",");
+ logToSDAndMaybeSerial((int)GPS.fixquality);
 }
 
 void logGPSTime() {
-    logfile.print(",");
-    logfile.print('"');
-    logfile.print("20"); logfile.print(GPS.year, DEC);
-    logfile.print("/");
-    logfile.print(GPS.month, DEC);
-    logfile.print("/");
-    logfile.print(GPS.day, DEC); Serial.print('/');
-    logfile.print(" ");
-    logfile.print(GPS.hour, DEC); logfile.print(':');
-    logfile.print(":");
-    logfile.print(GPS.minute, DEC);
-    logfile.print(':');
-    logfile.print(GPS.seconds, DEC);
-    logfile.print('"');
+    logToSDAndMaybeSerial(",");
+    logToSDAndMaybeSerial('"');
+    logToSDAndMaybeSerial("20"); logToSDAndMaybeSerial(GPS.year, DEC);
+    logToSDAndMaybeSerial("/");
+    logToSDAndMaybeSerial(GPS.month, DEC);
+    logToSDAndMaybeSerial("/");
+    logToSDAndMaybeSerial(GPS.day, DEC);
+    logToSDAndMaybeSerial(" ");
+    logToSDAndMaybeSerial(GPS.hour, DEC); logToSDAndMaybeSerial(':');
+    logToSDAndMaybeSerial(":");
+    logToSDAndMaybeSerial(GPS.minute, DEC);
+    logToSDAndMaybeSerial(':');
+    logToSDAndMaybeSerial(GPS.seconds, DEC);
+    logToSDAndMaybeSerial('"');
 }
 
 void logPressure() {
@@ -305,40 +310,40 @@ void logPressure() {
     /* Then convert the atmospheric pressure, SLP and temp to altitude    */
     /* Update this next line with the current SLP for better results      */
     float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
-    logfile.print(",");
-    logfile.print(event.pressure);
-    logfile.print(",");
-    logfile.print(temperature);
-    logfile.print(",");
-    logfile.print(bmp.pressureToAltitude(seaLevelPressure,
+    logToSDAndMaybeSerial(",");
+    logToSDAndMaybeSerial(event.pressure);
+    logToSDAndMaybeSerial(",");
+    logToSDAndMaybeSerial(temperature);
+    logToSDAndMaybeSerial(",");
+    logToSDAndMaybeSerial(bmp.pressureToAltitude(seaLevelPressure,
                                         event.pressure,
                                         temperature)); 
   }
   else
   {
     Serial.println(F("Sensor error"));
-    logfile.print(",,,");
+    logToSDAndMaybeSerial(",,,");
   }
 }
 
 void logUnixTime() {
     DateTime now = RTC.now();
     // log time
-    logfile.print(",");
-    logfile.print(now.unixtime()); // seconds since 1/1/1970
-    logfile.print(",");
-    logfile.print('"');
-    logfile.print(now.year(), DEC);
-    logfile.print("/");
-    logfile.print(now.month(), DEC);
-    logfile.print("/");
-    logfile.print(now.day(), DEC);
-    logfile.print(" ");
-    logfile.print(now.hour(), DEC);
-    logfile.print(":");
-    logfile.print(now.minute(), DEC);
-    logfile.print(":");
-    logfile.print(now.second(), DEC);
-    logfile.print('"');
+    logToSDAndMaybeSerial(",");
+    logToSDAndMaybeSerial(now.unixtime()); // seconds since 1/1/1970
+    logToSDAndMaybeSerial(",");
+    logToSDAndMaybeSerial('"');
+    logToSDAndMaybeSerial(now.year(), DEC);
+    logToSDAndMaybeSerial("/");
+    logToSDAndMaybeSerial(now.month(), DEC);
+    logToSDAndMaybeSerial("/");
+    logToSDAndMaybeSerial(now.day(), DEC);
+    logToSDAndMaybeSerial(" ");
+    logToSDAndMaybeSerial(now.hour(), DEC);
+    logToSDAndMaybeSerial(":");
+    logToSDAndMaybeSerial(now.minute(), DEC);
+    logToSDAndMaybeSerial(":");
+    logToSDAndMaybeSerial(now.second(), DEC);
+    logToSDAndMaybeSerial('"');
 }
 
