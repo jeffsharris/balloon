@@ -148,7 +148,7 @@ void setup(void)
   useInterrupt(true);
 
     
-  logfile.println("TimeOn (ms),UnixTime (ms),DateTime (PST),Pressure (hPa),Temp (°C),Altitude (m),GPSTime (GMT),GPSFix,GPSFixQuality,Latitude,Longitude,Latitude(°),Longitude(°),Speed(m/s),GPSAngle(°),GPSAltitude(m),GPSSatellites");//,latitude,longitude,speed,angle,altitude,satellites");
+  logfile.println("TimeOn (ms),UnixTime (ms),DateTime (PST),Pressure (hPa),Temp (°C),Altitude (m),GPSTime (GMT),GPSFix,Latitude,Longitude,Latitude (°),Longitude (°),Speed (m/s),GPSAngle (°),GPSAltitude (m),GPSSatellites");//,latitude,longitude,speed,angle,altitude,satellites");
 }
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
@@ -211,12 +211,9 @@ void loop(void)
   if (millis() - timer > 2000) { 
     // log milliseconds since starting
     uint32_t m = millis();
-    logfile.print(m);           // milliseconds since start
-    logfile.print(", ");    
+    logfile.print(m);           // milliseconds since start   
     logUnixTime();
-    logfile.print(", ");
     logPressure();
-    logfile.print(", ");
     logGPS();
     logfile.println("");
     logfile.flush();
@@ -225,43 +222,42 @@ void loop(void)
 
 void logGPS() {
     logGPSTime();
-    logfile.print(",");
-    logGPSFixAndQuality();
+    logGPSFix();
     if (GPS.fix) {
-      logfile.print(",");
       logGPSLocation();
-      logfile.print(",");
       logGPSSpeed();
-      logfile.print(",");
       logGPSAngle();
-      logfile.print(",");
       logGPSAltitude();
-      logfile.print(",");
       logGPSSatellites();
       
     } else {
-      logfile.print(",,,,,");
+      logfile.print(",,,,,,,,");
     }
 }
 
 void logGPSSatellites() {
+  logfile.print(",");
   logfile.print((int)GPS.satellites);
 }
 
 void logGPSAltitude() {
+  logfile.print(",");
   logfile.print(GPS.altitude);
 }
 
 
 void logGPSAngle() {
+  logfile.print(",");
   logfile.print(GPS.angle);
 }
 
 void logGPSSpeed() {
+  logfile.print(",");
   logfile.print(GPS.speed);
 }
 
 void logGPSLocation() {
+  logfile.print(",");
   logfile.print(GPS.latitude, 4);
   logfile.print(GPS.lat);
   logfile.print(",");
@@ -274,12 +270,12 @@ void logGPSLocation() {
 }
 
 void logGPSFixAndQuality() {
- logfile.print((int)GPS.fix);
  logfile.print(",");
- logfile.print((int)GPS.fixquality);
+ logfile.print((int)GPS.fix);
 }
 
 void logGPSTime() {
+    logfile.print(",");
     logfile.print('"');
     logfile.print("20"); logfile.print(GPS.year, DEC);
     logfile.print("/");
@@ -309,7 +305,7 @@ void logPressure() {
     /* Then convert the atmospheric pressure, SLP and temp to altitude    */
     /* Update this next line with the current SLP for better results      */
     float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
-    
+    logfile.print(",");
     logfile.print(event.pressure);
     logfile.print(",");
     logfile.print(temperature);
@@ -321,12 +317,14 @@ void logPressure() {
   else
   {
     Serial.println(F("Sensor error"));
+    logfile.print(",,,");
   }
 }
 
 void logUnixTime() {
     DateTime now = RTC.now();
     // log time
+    logfile.print(",");
     logfile.print(now.unixtime()); // seconds since 1/1/1970
     logfile.print(",");
     logfile.print('"');
