@@ -206,6 +206,7 @@ void loop(void)
 
   // approximately every 2 seconds or so, print out the current stats
   if (millis() - timer > 2000) { 
+    timer = millis();
     // log milliseconds since starting
     uint32_t m = millis();
     logfile.print(m);           // milliseconds since start   
