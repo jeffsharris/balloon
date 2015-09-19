@@ -46,6 +46,8 @@ RTC_DS1307 RTC;
 // for the data logging shield, we use digital pin 10 for the SD cs line
 const int chipSelect = 10;
 
+#define LOG_INTERVAL     2000
+
 // the logging file
 File logfile;
 
@@ -205,7 +207,7 @@ void loop(void)
   if (timer > millis())  timer = millis();
 
   // approximately every 2 seconds or so, print out the current stats
-  if (millis() - timer > 2000) { 
+  if (millis() - timer > LOG_INTERVAL) { 
     timer = millis();
     // log milliseconds since starting
     uint32_t m = millis();
