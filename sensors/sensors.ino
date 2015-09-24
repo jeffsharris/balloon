@@ -30,9 +30,17 @@ Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 Adafruit_GPS GPS(&Serial1);
 
 
-// Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
+// Set GPSECHO to false to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences. 
-#define GPSECHO  0
+#define GPSECHO  1
+
+// Set GPSLOGGER to true to log the GPS data to the data logger built into the sensor
+// This option can only be exercised if GPSECHO is also true
+#define GPSLOGGER 1
+
+// Set GPSERASE to true to erase whatever data is stored in the GPS module before logging commences
+// This option can only be exercised if GPSLOGGER is also true
+#define GPSERASE 1
 
 // this keeps track of whether we're using the interrupt
 // off by default!
@@ -145,8 +153,20 @@ void setup(void)
   // every 1 millisecond, and read data from the GPS for you. that makes the
   // loop code a heck of a lot easier!
   useInterrupt(true);
-
-    
+  
+  #if GPSLOGGER
+  #if GPSERASE
+  Serial.print("\nERASING GPS DATA");
+  GPS.sendCommand(PMTK_LOCUS_ERASE_FLASH);
+  #endif
+  
+  Serial.print("\nSTARTING GPS LOGGING....");
+  if (GPS.LOCUS_StartLogger())
+    Serial.println(" STARTED!");
+  else
+    Serial.println(" no response :(");
+  #endif
+  
   logfile.print("TimeOn (ms),UnixTime (ms),DateTime (PST),GPSTime (UTC),GPSFixQuality,Latitude,Longitude,Latitude (°),Longitude (°),Speed (knots),GPSAngle (°),GPSAltitude (cm),GPSSatellites,Pressure (hPa),Temp (°C),Altitude (m)\r\n");
 }
 
