@@ -40,7 +40,7 @@ Adafruit_GPS GPS(&Serial1);
 
 // Set GPSERASE to true to erase whatever data is stored in the GPS module before logging commences
 // This option can only be exercised if GPSLOGGER is also true
-#define GPSERASE 1
+#define GPSERASE 0
 
 // this keeps track of whether we're using the interrupt
 // off by default!
@@ -60,7 +60,7 @@ const int chipSelect = 10;
 File logfile;
 
 // Reset the real time clock's time to be the current time of the computer
-#define SET_CLOCK        0
+#define SET_CLOCK        1
 
 // Echo data to serial port
 #define ECHO_TO_SERIAL   1
@@ -136,11 +136,11 @@ void setup(void)
   // Note you must send both commands below to change both the output rate (how often the position
   // is written to the serial line), and the position fix rate.
   // 1 Hz update rate
-  //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-  //GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+  GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ);
   // 5 Hz update rate- for 9600 baud you'll have to set the output to RMC or RMCGGA only (see above)
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
-  GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
+  //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+  //GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
   // 10 Hz update rate - for 9600 baud you'll have to set the output to RMC only (see above)
   // Note the position can only be updated at most 5 times a second so it will lag behind serial output.
   //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
@@ -303,7 +303,7 @@ void logGPSTime() {
     logfile.print("/");
     logfile.print(GPS.day, DEC);
     logfile.print(" ");
-    logfile.print(GPS.hour, DEC); logfile.print(':');
+    logfile.print(GPS.hour, DEC);
     logfile.print(":");
     logfile.print(GPS.minute, DEC);
     logfile.print(':');
